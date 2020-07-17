@@ -1,0 +1,50 @@
+{
+  "name": "harmonize",
+  "version": "0.0.1",
+  "description": "harmonize is a cluster benching tool",
+  "main": "index.js",
+  "scripts": {
+    "serve": "tsc && node main.js",
+    "build": "tsc && webpack",
+    "test": "tsc && node ./dist/Tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Peterinor/harmonize.git"
+  },
+  "keywords": [
+    "bench",
+    "cluster"
+  ],
+  "author": "yu.t",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Peterinor/harmonize/issues"
+  },
+  "homepage": "https://github.com/Peterinor/harmonize#readme",
+  "dependencies": {
+    "commander": "^5.1.0",
+    "koa": "^2.13.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-router": "^9.1.0",
+    "koa-static": "^5.0.0",
+    "koa-websocket": "^6.0.0",
+    "node-fetch": "^2.6.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.11.3",
+    "@types/koa-bodyparser": "^4.3.0",
+    "@types/koa-router": "^7.4.1",
+    "@types/koa-websocket": "^5.0.4",
+    "@types/koa2-cors": "^2.0.1",
+    "@types/react": "^16.9.43",
+    "@types/react-dom": "^16.9.8",
+    "awesome-typescript-loader": "^5.2.1",
+    "source-map-loader": "^1.0.1",
+    "typescript": "^3.9.6",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12"
+  }
+}
