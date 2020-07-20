@@ -21,29 +21,14 @@ export class BenchAtom {
         this._cmd = null;
     }
 
-    start(): number {
+    start(): ChildProcessWithoutNullStreams {
         if (this._cmd) {
             throw "running...";
         }
-        var output = [];
         var args = BenchBackendFactory.new(this.session.backend).shellCmd(this.conc, this.session, this.scene);
         var cmd = args.shift();
         this._cmd = utils.exec(cmd, args);
-        this._cmd.on('data', data => {
-            console.log(data);
-            output.push(data);
-        }).on('error', (c, s) => {
-            console.error(c, s);
-            output.push(c + s);
-            return -1;
-        }).on('exit', (c, s) => {
-            console.log(c, s);
-            if (c === 0) {
-                return 0;
-            }
-            return -1;
-        });
-        return 0;
+        return this._cmd;
     }
 
     stop() {
@@ -78,6 +63,7 @@ export class Component {
 }
 
 export class Commander extends Component {
+
     nodes: Array<ClusterNode>;
     pipes: Map<string, WebSocket>;
 
@@ -115,6 +101,22 @@ export class Commander extends Component {
 
     connect(nodeId: string, websocket: WebSocket) {
         this.pipes.set(nodeId, websocket);
+        console.log('connected', nodeId, this.pipes.keys());
+    }
+
+    connectCluster(nodeId: string, websocket: WebSocket) {
+        this.nodes.forEach(n => {
+            if (n.id == nodeId) {
+                n.pipe = websocket;
+                websocket.onmessage = evt => {
+                    if (this.pipes.get(n.id)) {
+                        this.pipes.get(n.id).send(evt.data);
+                    }
+                }
+            }
+
+        });
+        console.log('cluster connected', nodeId, this.nodes.map(n => n.id));
     }
 
     bench(session: BenchSession) {
@@ -132,7 +134,6 @@ export class Commander extends Component {
             atoms.push(new Promise((resolve, reject) => {
                 utils.postJSON("http://" + n.id + "/dispatch-bench", atom)
                     .then(json => {
-                        console.log(json);
                         resolve({
                             nodeId: n.id,
                             data: json
@@ -150,7 +151,6 @@ export class Commander extends Component {
             atoms.push(new Promise((resolve, reject) => {
                 utils.postJSON("http://" + n.id + "/kill-bench", {})
                     .then(json => {
-                        console.log(json);
                         resolve({
                             nodeId: n.id,
                             data: json
@@ -169,6 +169,7 @@ export class ClusterNode extends Component {
     commander: Commander;
     shellOutput: Array<string>;
     availableBackends: Array<BenchBackend>;
+    pipe: globalThis.WebSocket | WebSocket;
     constructor(_id: string) {
         super(_id);
 
@@ -178,26 +179,47 @@ export class ClusterNode extends Component {
         var self = this;
         setInterval(() => {
             if (self.commander) {
-                console.log('pong');
-                utils.postJSON("http://" + self.commander.id + "/pong", self);
+                utils.postJSON("http://" + self.commander.id + "/pong", self)
+                    .then(json => {
+                        this.connectToCommander();
+                    });
             }
         }, HEALTH_CHECK_INTERVAL);
     }
     registerTo(commander: Commander) {
         this.commander = commander;
-        console.log('register');
         utils.postJSON("http://" + commander.id + "/register", this)
             .then(json => {
-                console.log(json);
+                this.connectToCommander();
             });
+    }
+
+    private connectToCommander() {
+        if (!this.pipe || this.pipe.readyState != WebSocket.OPEN) {
+            const ws = new WebSocket('ws://' + this.commander.id + '/websocket/cluster?nodeId=' + this.id);
+            this.pipe = ws;
+            ws.onmessage = evt => {
+                console.log(evt.data);
+            }
+        }
+
     }
 
 
     bench(atom: BenchAtom): Promise<BenchReport> {
-        console.log(atom);
+        console.log("start benching:", atom);
         return new Promise((resolve, reject) => {
             var r = atom.start();
-            resolve(new BenchReport(this.id, r));
+            r.on('data', data => {
+                this.pipe.send(JSON.stringify({ type: 'node-report', data: data }));
+                // console.log(data);
+            }).on('exit', (c, s) => {
+                if (c == 0) {
+                    resolve(new BenchReport(this.id, 'ok'));
+                } else {
+                    reject('error on exit, code:' + c);
+                }
+            })
         });
     }
 

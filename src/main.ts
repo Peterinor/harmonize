@@ -4,6 +4,7 @@ import * as KoaStatic from 'koa-static';
 import * as bodyParser from 'koa-bodyparser';
 
 import * as websockify from 'koa-websocket';
+import * as WebSocket from 'ws';
 
 import * as program from 'commander';
 
@@ -14,8 +15,8 @@ import { BenchSession, BenchScene } from './harmonize/Benching';
 program
     .version('0.1.0')
     .option('-r, --role [value]', 'role of the node, node or commander', 'node')
-    .option('-p, --port [value]', 'TCP port to listen on', '80')
-    .option('-s, --commander [value]', 'commander server, ip:port')
+    .option('-p, --port [value]', 'TCP port to listen on', '3010')
+    .option('-s, --commander [value]', 'commander server, ip:port', 'localhost')
     .parse(process.argv);
 
 
@@ -68,12 +69,16 @@ if (ROLE === "commander") {
     app.ws.use((ctx, next) => {
         if (ctx.path === '/websocket') {
             if (ctx.query.nodeId) {
-                console.log(ctx.query);
                 ctx.websocket.send(JSON.stringify({ msg: 'Hello ' + ctx.query.nodeId }));
                 commander.connect(ctx.query.nodeId, ctx.websocket);
             }
         }
-
+        if (ctx.path === '/websocket/cluster') {
+            if (ctx.query.nodeId) {
+                ctx.websocket.send(JSON.stringify({ msg: 'Hello cluster' + ctx.query.nodeId }));
+                commander.connectCluster(ctx.query.nodeId, ctx.websocket);
+            }
+        }
     });
 
 } else {
@@ -105,7 +110,6 @@ if (ROLE === "commander") {
         var br = await node.stop(sessionId);
         ctx.body = JSON.stringify({ node: node, status: br });
     });
-
 
     var commander = new Components.Commander(program.commander);
     node.registerTo(commander);

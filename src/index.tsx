@@ -14,9 +14,13 @@ globalThis.bench = function xxx() {
 
 utils.postJSON('./cluster', {}).then((commander: Commander) => {
 
-    commander.nodes.forEach(n => {
-        var ws = new WebSocket("ws://" + window.location.host + "/websocket?nodeId=" + n.id);
+    function connect(nodeId) {
+        var ws = new WebSocket("ws://" + window.location.host + "/websocket?nodeId=" + nodeId);
         ws.addEventListener('handshake', (evt: MessageEvent) => {
+            // console.log(evt.data);
+        });
+
+        ws.addEventListener('node-report', (evt: MessageEvent) => {
             console.log(evt.data);
         });
 
@@ -28,11 +32,24 @@ utils.postJSON('./cluster', {}).then((commander: Commander) => {
                     ws.dispatchEvent(evtx);
                 }
             } catch (ex) {
-                n.shellOutput.push(evt.data);
                 console.log(evt);
             }
         }
+
+        return ws;
+    }
+
+    commander.nodes.forEach(n => {
+        n.pipe = connect(n.id);
     });
+
+    setInterval(() => {
+        commander.nodes.forEach(n => {
+            if (!n.pipe || n.pipe.readyState != WebSocket.OPEN) {
+                n.pipe = connect(n.id);
+            }
+        });
+    }, 5000)
 
     var session = new BenchSession();
     session.id = "Offer_2node_gzip";
