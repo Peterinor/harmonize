@@ -1,7 +1,6 @@
 import * as React from "react";
 import { BenchSession } from "../benching/Benching";
 import { Commander } from "../harmonize/Component";
-import { Cluster } from "./Cluster";
 import { Session } from "./Session";
 import { ClusterInfo } from "./ClusterInfo";
 
@@ -33,7 +32,7 @@ export class Root extends React.Component<RootProps, {}> {
     addVariable() {
         var form = document.querySelector('#addSessionModal form#form-variable');
         var varObj = serialize(form, { hash: true });
-        this.props.session.variables.set(varObj.varName, varObj.varValue);
+        this.props.session.variables[varObj.varName] = varObj.varValue;
         console.log(varObj);
         this.setState({ t: Date.now() });
     }
@@ -49,8 +48,8 @@ export class Root extends React.Component<RootProps, {}> {
     render() {
 
         var vaiables = [];
-        this.props.session.variables.forEach((v, k) => {
-            vaiables.push(<span className="badge badge-pill badge-secondary" style={{ marginRight: '0.5em' }} key={k}>{k} = {v}</span>);
+        Object.keys(this.props.session.variables).forEach((k) => {
+            vaiables.push(<span className="badge badge-pill badge-secondary" style={{ marginRight: '0.5em' }} key={k}>{k} = {this.props.session.variables[k]}</span>);
         });
 
         var loadSession = this.loadSession.bind(this);

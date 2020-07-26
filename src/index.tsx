@@ -67,8 +67,8 @@ utils.postJSON('/cluster', {}).then((commander: Commander) => {
     session.parse("5..50 step 10");
     // session.durationn = 1000;
     session.zoom = 250;
-    session.variables.set('channel', 'APP');
-    session.variables.set('server', 'ecip-offer-api');
+    session.variables['channel'] = 'APP';
+    session.variables['server'] = 'ecip-offer-api';
 
     var scene1 = new BenchScene("offer", "GET", "/offer");
     scene1.body = JSON.stringify(scene1);

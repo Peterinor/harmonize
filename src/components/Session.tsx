@@ -2,9 +2,11 @@ import * as React from "react";
 import { BenchSession, BenchScene } from "../benching/Benching";
 import { Scene } from "./Scene"
 import { Cluster } from "./Cluster";
+import { Commander } from "../harmonize/Component";
 
 import * as serialize from 'form-serialize';
-import { Commander } from "../harmonize/Component";
+import * as utils from "../harmonize/Utils"
+
 
 export interface SessionProps { session: BenchSession, cluster: Commander }
 
@@ -23,11 +25,14 @@ export class Session extends React.Component<SessionProps, {}> {
             var headers: Array<string> = sceneObj.headersString.split(';');
             for (const header of headers) {
                 var hs = header.split(':');
-                scene.headers.set(hs[0], hs[1]);
+                scene.headers[hs[0]] = hs[1];
             }
         }
         this.props.session.scenes.push(scene);
-        this.setState({ t: Date.now() });
+
+        utils.postJSON('./session', this.props.session).then((session: BenchSession) => {
+            this.setState({ t: Date.now() });
+        });
 
         console.log(sceneObj);
     }
@@ -51,11 +56,11 @@ export class Session extends React.Component<SessionProps, {}> {
 
         var addScene = this.addScene.bind(this);
         return (<div className="border border-secondary" data-version={this.state["t"] || 0}>
-            <div className="position-relative border border-secondary d-flex flex-row bd-highlight mb-3" style={{ padding: '1rem 0.2rem', margin: '1rem 0.2rem' }}>
-                <span style={{ position: 'absolute', top: '-1rem', left: '0.5rem', background: 'white', padding: '0 0.5rem' }}>
+            <div className="position-relative border border-secondary d-flex flex-row bd-highlight mb-3" style={{ padding: '1rem 0.2rem', margin: '1rem 0.2rem', overflowX: 'scroll' }}>
+                <span style={{ position: 'absolute', top: '-.8rem', left: '0.5rem', background: 'white', padding: '0 0.5rem' }}>
                     Session: {this.props.session.id} / Scenes</span>
                 <button type="button" className="btn btn-warning" data-toggle="modal" data-target="#addSceneModal"
-                    style={{ position: 'absolute', top: '0.5rem', right: '0.5rem' }}>Add Scene</button>
+                    style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', zIndex: 100 }}>Add Scene</button>
                 {scenes}
             </div>
             <div className="modal fade" id="addSceneModal" role="dialog" aria-labelledby="addSceneModalLabel"

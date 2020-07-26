@@ -1,30 +1,30 @@
 import { BenchSession } from './Benching'
 
 export class SessionRepository {
-    private sessionList: Array<BenchSession>;
+    private sessionMap: Map<string, BenchSession>;
 
     constructor() {
-        this.sessionList = [];
+        this.sessionMap = new Map();
     }
 
     addOrUpdate(session: BenchSession) {
-        this.sessionList.push(session);
+        this.sessionMap.set(session.id, session);
     }
 
     listAll(): Array<BenchSession> {
-        return [].concat(this.sessionList);
+        var r = [];
+        for (const s of this.sessionMap.values()) {
+            r.push(s);
+        }
+        return r;
     }
 
     get(id: string) {
-        var s = this.sessionList.filter(s => s.id === id);
-        if (s.length > 0) {
-            return s;
-        } else {
-            return null;
-        }
+        return this.sessionMap.get(id);
     }
 
     delete(id: string) {
+        return this.sessionMap.delete(id);
     }
 
 }

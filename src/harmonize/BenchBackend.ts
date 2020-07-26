@@ -115,9 +115,10 @@ Options are:
         }
 
         if (scene.headers) {
-            scene.headers.forEach(h => {
+            Object.keys(scene.headers).forEach(k => {
+                var hs = [k, scene.headers[k]];
                 args.push('-H');
-                args.push(h);
+                args.push(hs.join(':'));
             })
         }
 

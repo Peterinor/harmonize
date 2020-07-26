@@ -10,7 +10,7 @@ export class BenchSession {
     zoom: number;
     duration: number;
     extraCmdOptions: string;
-    variables: Map<string, any>;
+    variables: Object;
 
     scenes: Array<BenchScene>;
 
@@ -24,7 +24,7 @@ export class BenchSession {
         this.zoom = 250;
 
         this.scenes = [];
-        this.variables = new Map();
+        this.variables = {};
     }
 
     parse(conc_list: string) {
@@ -58,7 +58,7 @@ export class BenchScene {
     method: string; // GET, POST, ...
     url: string;
 
-    headers: Map<string, string>;
+    headers: Object;
     contentType: string;
     body: string;
 
@@ -67,6 +67,6 @@ export class BenchScene {
         this.method = _method;
         this.url = _url;
 
-        this.headers = new Map();
+        this.headers = {};
     }
 }
