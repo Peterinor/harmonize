@@ -1,21 +1,64 @@
 import * as React from "react";
-import { BenchSession } from "../harmonize/Benching";
+import { BenchSession } from "../benching/Benching";
 import { Commander } from "../harmonize/Component";
 import { Cluster } from "./Cluster";
 import { Session } from "./Session";
 import { ClusterInfo } from "./ClusterInfo";
 
+import * as utils from "../harmonize/Utils"
+import * as serialize from 'form-serialize';
+
 export interface RootProps { cluster: Commander, session: BenchSession, sessions: Array<BenchSession> }
 
 export class Root extends React.Component<RootProps, {}> {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            t: Date.now(),
+            session: this.props.sessions[0]
+        };
+    }
+
+    addSession() {
+        var form = document.querySelector('#addSessionModal form#form-session');
+        var sessionObj = serialize(form, { hash: true });
+        console.log(sessionObj);
+
+        utils.postJSON('./session', sessionObj).then((session: BenchSession) => {
+            this.setState({ t: Date.now(), session: session });
+        });
+    }
+
+    addVariable() {
+        var form = document.querySelector('#addSessionModal form#form-variable');
+        var varObj = serialize(form, { hash: true });
+        this.props.session.variables.set(varObj.varName, varObj.varValue);
+        console.log(varObj);
+        this.setState({ t: Date.now() });
+    }
+
+    loadSession(id: string) {
+        console.log('load session', id);
+        this.setState({
+            t: Date.now(),
+            session: this.props.sessions.filter(s => s.id === id)[0]
+        });
+    }
+
     render() {
 
         var vaiables = [];
         this.props.session.variables.forEach((v, k) => {
-            vaiables.push(<span className="badge badge-pill badge-secondary" key={k}>{k} = {v}</span>);
+            vaiables.push(<span className="badge badge-pill badge-secondary" style={{ marginRight: '0.5em' }} key={k}>{k} = {v}</span>);
         });
 
-        return (<div className="container-fluid">
+        var loadSession = this.loadSession.bind(this);
+
+        var addSession = this.addSession.bind(this);
+        var addVariable = this.addVariable.bind(this);
+
+        return (<div className="container-fluid" data-version={this.state["t"] || 0}>
             <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
                 <a className="navbar-brand" href="#">Harmonize</a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
@@ -34,7 +77,7 @@ export class Root extends React.Component<RootProps, {}> {
                             </a>
                             <div className="dropdown-menu" aria-labelledby="navbarDropdown">
                                 {this.props.sessions.map((s, i) => {
-                                    return (<a className="dropdown-item" key={i} href="#">{s.id}</a>)
+                                    return (<a className="dropdown-item" key={i} href="#" onClick={e => loadSession(s.id)}>{s.id}</a>)
                                 })}
                             </div>
                         </li>
@@ -63,15 +106,15 @@ export class Root extends React.Component<RootProps, {}> {
                             </button>
                         </div>
                         <div className="modal-body">
-                            <form>
+                            <form id="form-session">
                                 <div className="form-row">
                                     <div className="form-group col-md-6">
                                         <label htmlFor="input_session_id">Session Id</label>
-                                        <input type="text" className="form-control" id="input_session_id" />
+                                        <input type="text" className="form-control" id="input_session_id" defaultValue="session-1" name="id" />
                                     </div>
                                     <div className="form-group col-md-6">
-                                        <label htmlFor="input_scene_method">Backend</label>
-                                        <select id="input_scene_method" className="form-control" defaultValue="ab">
+                                        <label htmlFor="input_session_backend">Backend</label>
+                                        <select id="input_session_backend" className="form-control" defaultValue="ab" name="backend" >
                                             <option value="ab">Apache Bench</option>
                                             <option value="1">...</option>
                                             <option value="2">...</option>
@@ -85,37 +128,46 @@ export class Root extends React.Component<RootProps, {}> {
                                     <div className="form-row">
                                         <div className="form-group col-md-4">
                                             <label htmlFor="input_session_concurrency">Concurrency</label>
-                                            <input type="text" className="form-control" id="input_session_concurrency" />
+                                            <input type="text" className="form-control" id="input_session_concurrency" defaultValue="5..100 step 5" name="concurrency" placeholder="100 | 1 5 10 | 5..100 step 5" />
                                         </div>
                                         <div className="form-group col-md-4">
-                                            <label htmlFor="input_session_zoom">Zoom</label>
-                                            <input type="text" className="form-control" id="input_session_zoom" />
+                                            <label htmlFor="input_session_zoom">Zoom(每并发请求书)</label>
+                                            <input type="number" className="form-control" id="input_session_zoom" defaultValue={250} name="zoom" />
                                         </div>
                                         <div className="form-group col-md-4">
-                                            <label htmlFor="input_session_duration">Duration</label>
-                                            <input type="text" className="form-control" id="input_session_duration" />
+                                            <label htmlFor="input_session_duration">Duration(执行时长)</label>
+                                            <input type="number" className="form-control" id="input_session_duration" name="duration" />
                                         </div>
                                     </div>
                                     <div className="form-group">
-                                        <label htmlFor="input_session_extra_cmd_options">Extra Command Options</label>
-                                        <input type="text" className="form-control" id="input_session_extra_cmd_options"
-                                            placeholder="" />
+                                        <label htmlFor="input_session_extra_cmd_options">Extra Command Options(执行压测命令的额外参数，取决于backend和实际场景)</label>
+                                        <input type="text" className="form-control" id="input_session_extra_cmd_options" name="extraCmdOptions" placeholder="-k -r -s 100" />
                                     </div>
                                 </div>
                                 <br />
+                            </form>
+                            <form id="form-variable">
                                 <div className="border border-secondary" style={{ padding: '0 0.5rem', margin: '0.2rem 0' }}>
                                     <span
                                         style={{ position: 'relative', top: '-1rem', background: 'white', padding: '0 0.5rem' }}>
                                         Variables</span>
-                                    <div className="form-group">
-                                        {vaiables}
+                                    <div className="form-row">
+                                        <div className="form-group col-md-9">
+                                            {vaiables}
+                                        </div>
+                                        <div className="form-group col-md-3">
+                                            <input type="text" className="form-control form-control-sm" name="varName" placeholder="variable name" />
+                                            <input type="text" className="form-control form-control-sm" name="varValue" placeholder="variable value" />
+                                            <button type="button" className="btn btn-primary btn-sm btn-block" onClick={addVariable}>Add</button>
+                                        </div>
                                     </div>
+
                                 </div>
                             </form>
                         </div>
                         <div className="modal-footer">
                             <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
-                            <button type="button" className="btn btn-primary">Submit</button>
+                            <button type="button" className="btn btn-primary" onClick={addSession}>Submit</button>
                         </div>
                     </div>
                 </div>
@@ -127,7 +179,7 @@ export class Root extends React.Component<RootProps, {}> {
                     role="button">Learn more</a>
                 </p>
             </div>
-            <Session session={this.props.session} />
+            <Session session={this.state["session"]} cluster={this.props.cluster} />
             <ClusterInfo cluster={this.props.cluster} />
         </div>);
     }

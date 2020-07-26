@@ -37,6 +37,25 @@ export function postJSON(url: String, body: any) {
     });
 }
 
+export function get(url: String, query: any) {
+
+    return fetch(url, {
+        method: "GET",
+        headers: {
+            Accept: "application/json, text/plain, */*",
+            "Content-Type": "application/json",
+            "Accept-Encoding": "gzip, deflate",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Safari/537.36"
+        },
+        query: query
+    });
+}
+export function getJSON(url: String, query: any) {
+    return get(url, query).then(res => {
+        return res.json();
+    });
+}
+
 export function exec(cmd: string, args?: string | Array<string>): ChildProcessWithoutNullStreams {
     if (!args) {
         args = [];

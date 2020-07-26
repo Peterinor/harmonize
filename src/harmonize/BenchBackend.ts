@@ -1,5 +1,5 @@
 import * as utils from './Utils';
-import { BenchSession, BenchScene } from './Benching';
+import { BenchSession, BenchScene } from '../benching/Benching';
 
 export class BenchBackendFactory {
     static new(bench: string): BenchBackend {

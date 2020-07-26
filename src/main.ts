@@ -4,13 +4,14 @@ import * as KoaStatic from 'koa-static';
 import * as bodyParser from 'koa-bodyparser';
 
 import * as websockify from 'koa-websocket';
-import * as WebSocket from 'ws';
 
 import * as program from 'commander';
 
 import * as utils from './harmonize/Utils'
 import * as Components from './harmonize/Component';
-import { BenchSession, BenchScene } from './harmonize/Benching';
+import { BenchSession, BenchScene } from './benching/Benching';
+
+import { SessionRepository } from './benching/SessionRepository';
 
 program
     .version('0.1.0')
@@ -29,13 +30,37 @@ const app = websockify(new Koa());
 app.use(KoaStatic('.'));
 app.use(bodyParser());
 
-const router = new Router();
-router.get('/hw', (ctx, next) => {
-    ctx.body = 'Hello World!';
-});
-
 if (ROLE === "commander") {
+    const sessionRepo = new SessionRepository();
 
+    const sessionRouter = new Router({
+        prefix: '/session'
+    });
+    // Session management
+    sessionRouter.post('/', ctx => {
+        var bs = new BenchSession();
+        Object.assign(bs, ctx.request.body);
+        sessionRepo.addOrUpdate(bs);
+        ctx.body = JSON.stringify(bs);
+    });
+
+    sessionRouter.get('/list', ctx => {
+        ctx.body = JSON.stringify(sessionRepo.listAll());
+    });
+
+    sessionRouter.get('/:id', ctx => {
+        var s = sessionRepo.get(ctx.params.id);
+        if (s) {
+            ctx.body = JSON.stringify(s);
+        } else {
+            ctx.response.status = 400;
+            ctx.body = JSON.stringify({
+                error: "session not found"
+            });
+        }
+    });
+
+    const router = new Router();
     // Commander
     const commander = new Components.Commander(ID);
     router.post('/register', (ctx, next) => {
@@ -57,11 +82,8 @@ if (ROLE === "commander") {
     });
 
     router.post('/bench', (ctx, next) => {
-
         var bs = new BenchSession();
-        bs.parse('5');
-        var sc1 = new BenchScene("sc1", "GET", "http://localhost/");
-        bs.scenes.push(sc1);
+        Object.assign(bs, ctx.request.body);
         commander.bench(bs);
         ctx.body = JSON.stringify(bs);
     });
@@ -81,8 +103,17 @@ if (ROLE === "commander") {
         }
     });
 
+    app
+        .use(sessionRouter.routes())
+        .use(sessionRouter.allowedMethods());
+
+    app
+        .use(router.routes())
+        .use(router.allowedMethods());
+
 } else {
 
+    const router = new Router();
     if (!program.commander) {
         throw "commander server must be provided for a node";
     }
@@ -113,12 +144,13 @@ if (ROLE === "commander") {
 
     var commander = new Components.Commander(program.commander);
     node.registerTo(commander);
+
+
+    app
+        .use(router.routes())
+        .use(router.allowedMethods());
 }
 
-
-app
-    .use(router.routes())
-    .use(router.allowedMethods());
 
 app.listen(PORT, () => {
     console.log('koa is listening in ' + PORT);

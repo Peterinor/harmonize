@@ -1,5 +1,5 @@
 
-import { BenchSession, BenchScene } from './harmonize/Benching';
+import { BenchSession, BenchScene } from './benching/Benching';
 import { BenchBackendFactory } from './harmonize/BenchBackend';
 import { BenchAtom } from './harmonize/Component';
 

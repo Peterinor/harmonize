@@ -24,6 +24,7 @@
   "homepage": "https://github.com/Peterinor/harmonize#readme",
   "dependencies": {
     "commander": "^5.1.0",
+    "form-serialize": "^0.7.2",
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^9.1.0",

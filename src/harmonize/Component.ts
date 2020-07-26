@@ -3,7 +3,7 @@ import * as utils from './Utils';
 import { ChildProcessWithoutNullStreams } from 'child_process';
 
 import { BenchBackend, ApacheBench, JMeterBench, BenchBackendFactory } from './BenchBackend';
-import { BenchSession, BenchScene } from './Benching';
+import { BenchSession, BenchScene } from '../benching/Benching';
 
 const HEALTH_CHECK_INTERVAL = 5000;
 

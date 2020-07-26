@@ -1,4 +1,4 @@
-import { Commander } from "./Component";
+import { Commander } from "../harmonize/Component";
 
 export class BenchSession {
     id: string;
@@ -58,15 +58,15 @@ export class BenchScene {
     method: string; // GET, POST, ...
     url: string;
 
-    headers: Array<string>;
+    headers: Map<string, string>;
     contentType: string;
     body: string;
 
-    constructor(_name: string, _method: string, _url: string) {
+    constructor(_name?: string, _method?: string, _url?: string) {
         this.name = _name;
         this.method = _method;
         this.url = _url;
 
-        this.headers = [];
+        this.headers = new Map();
     }
 }

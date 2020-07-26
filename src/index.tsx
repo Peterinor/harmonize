@@ -4,15 +4,25 @@ import * as utils from "./harmonize/Utils"
 
 import { Commander } from "./harmonize/Component";
 import { Root } from "./components/Root";
-import { BenchSession, BenchScene } from "./harmonize/Benching";
+import { BenchSession, BenchScene } from "./benching/Benching";
+import commander = require("commander");
 
 globalThis.bench = function xxx() {
-    utils.postJSON('./bench', {}).then((session: BenchSession) => {
+    var bs = new BenchSession();
+    bs.parse('5');
+    var sc1 = new BenchScene("sc1", "GET", "http://localhost/");
+    bs.scenes.push(sc1);
+    utils.postJSON('./bench', bs).then((session: BenchSession) => {
         console.log(session);
     });
 }
 
-utils.postJSON('./cluster', {}).then((commander: Commander) => {
+Promise.all([utils.postJSON('/cluster', {}), utils.getJSON('/session/list', {})]).then(res => {
+    //[commander, sessions]
+    console.log(res);
+});
+
+utils.postJSON('/cluster', {}).then((commander: Commander) => {
 
     function connect(nodeId) {
         var ws = new WebSocket("ws://" + window.location.host + "/websocket?nodeId=" + nodeId);
@@ -69,8 +79,10 @@ utils.postJSON('./cluster', {}).then((commander: Commander) => {
 
     var sessions = [session];
 
-    ReactDOM.render(
-        <Root cluster={commander} session={session} sessions={sessions} />,
-        document.getElementById("root")
-    );
+    utils.getJSON('/session/list', {}).then((sessions: Array<BenchSession>) => {
+        ReactDOM.render(
+            <Root cluster={commander} session={session} sessions={sessions} />,
+            document.getElementById("root")
+        );
+    });
 });
